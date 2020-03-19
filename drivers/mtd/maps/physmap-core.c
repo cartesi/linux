@@ -524,17 +524,19 @@ static int physmap_flash_probe(struct platform_device *dev)
 		if (!info->maps[i].phys)
 			info->maps[i].phys = res->start;
 
-		info->win_order = get_bitmask_order(resource_size(res)) - 1;
-		info->maps[i].size = BIT(info->win_order +
-					 (info->gpios ?
-					  info->gpios->ndescs : 0));
-
 		info->maps[i].map_priv_1 = (unsigned long)dev;
 
 		if (info->gpios) {
+			info->win_order = get_bitmask_order(resource_size(res)) - 1;
+			info->maps[i].size = BIT(info->win_order +
+					         info->gpios->ndescs);
+
 			err = physmap_addr_gpios_map_init(&info->maps[i]);
 			if (err)
 				goto err_out;
+		} else {
+			info->maps[i].size = resource_size(res);
+
 		}
 
 #ifdef CONFIG_MTD_COMPLEX_MAPPINGS
