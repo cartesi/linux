@@ -133,8 +133,7 @@ config BROKEN_ON_SMP
 
 config INIT_ENV_ARG_LIMIT
 	int
-	default 32 if !UML
-	default 128 if UML
+	default 128
 	help
 	  Maximum of each of the number of arguments and environment
 	  variables passed to init from the kernel command line.
