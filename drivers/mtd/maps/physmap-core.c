@@ -536,7 +536,6 @@ static int physmap_flash_probe(struct platform_device *dev)
 				goto err_out;
 		} else {
 			info->maps[i].size = resource_size(res);
-
 		}
 
 #ifdef CONFIG_MTD_COMPLEX_MAPPINGS
