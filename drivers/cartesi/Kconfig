@@ -1,0 +1,17 @@
+menu "Cartesi Machine"
+
+config CARTESI_MACHINE
+    bool "Cartesi Machine "
+    depends on RISCV_SBI
+    default y if  RISCV_SBI
+    help
+        Enable support for the Cartesi Machine
+
+config CARTESI_YIELD_DRIVER
+    bool "Cartesi Machine Yield Device"
+    depends on CARTESI_MACHINE
+    default y
+    help
+        Cartesi Machine Yield Device
+
+endmenu
