@@ -1,0 +1,1 @@
+obj-$(CONFIG_CARTESI_YIELD_DRIVER) += yield.o
