@@ -435,6 +435,11 @@ void panic(const char *fmt, ...)
 			 "twice on console to return to the boot prom\n");
 	}
 #endif
+
+#ifdef CONFIG_CARTESI_HALT_ON_PANIC
+machine_halt();
+#endif
+
 #if defined(CONFIG_S390)
 	disabled_wait();
 #endif
