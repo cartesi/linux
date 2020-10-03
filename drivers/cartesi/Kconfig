@@ -14,6 +14,14 @@ config CARTESI_YIELD_DRIVER
     help
         Cartesi Machine Yield Device
 
+config CARTESI_DEHASH_DRIVER
+    bool "Cartesi Machine Dehash Device"
+    depends on CARTESI_MACHINE
+    default y
+    help
+        Cartesi Machine Dehash Device
+
+
 config CARTESI_HALT_ON_PANIC
     bool "Halt machine on kernel panic"
     depends on CARTESI_MACHINE

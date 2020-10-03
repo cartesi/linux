@@ -1,1 +1,2 @@
 obj-$(CONFIG_CARTESI_YIELD_DRIVER) += yield.o
+obj-$(CONFIG_CARTESI_DEHASH_DRIVER) += dehash.o
