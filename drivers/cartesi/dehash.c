@@ -93,8 +93,7 @@ unlock:
 
 static long dehash_get_info(struct file *file, unsigned int cmd, unsigned long arg)
 {
-    int ret, i;
-    uint64_t *hash;
+    int ret;
     struct dehash_info info;
     struct dehash_device *dhd;
     struct resource *res;
