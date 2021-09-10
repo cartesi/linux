@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Cartesi yield device.
- * Copyright (C) 2020 Cartesi Pte. Ltd.
+ * Copyright (C) 2020-2021 Cartesi Pte. Ltd.
  */
 
 #include <linux/kernel.h>
@@ -20,25 +20,46 @@
 
 #define SBI_YIELD 9
 
+static int tohost_is_valid(uint64_t tohost) {
+    uint64_t dev = tohost >> 56;
+    uint64_t cmd = tohost << 8 >> 56;
+    uint64_t reason = tohost << 16 >> 48;
+
+    if (dev != HTIF_DEVICE_YIELD) {
+        return 0;
+    }
+
+    if (cmd != HTIF_YIELD_MANUAL && cmd != HTIF_YIELD_AUTOMATIC) {
+        return 0;
+    }
+
+    if (reason != HTIF_YIELD_REASON_PROGRESS && reason != HTIF_YIELD_REASON_RX_ACCEPTED &&
+        reason != HTIF_YIELD_REASON_RX_REJECTED && reason != HTIF_YIELD_REASON_TX_OUTPUT &&
+        reason != HTIF_YIELD_REASON_TX_MESSAGE && reason != HTIF_YIELD_REASON_TX_RESULT) {
+        return 0;
+    }
+
+    return 1;
+}
+
 static long yield_drv_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
     struct yield_request request;
-    uint64_t yield_cmd, sbi_cmd;
     int ret;
 
-    if (cmd != IOCTL_YIELD)
+    if (cmd != IOCTL_YIELD) {
         return -ENOIOCTLCMD;
+    }
 
-    if ((ret = copy_from_user(&request, (void __user*)arg, sizeof(request))))
+    if ((ret = copy_from_user(&request, (void __user*)arg, sizeof(request)))) {
         return ret;
+    }
 
-    sbi_cmd = request.tohost << 8 >> 8;
-    yield_cmd = sbi_cmd << 8 >> 56;
-
-    if (yield_cmd != HTIF_YIELD_PROGRESS && yield_cmd != HTIF_YIELD_ROLLUP)
+    if (!tohost_is_valid(request.tohost)) {
         return -EINVAL;
+    }
 
-    request.fromhost = SBI_CALL_1(SBI_YIELD, sbi_cmd);
+    request.fromhost = SBI_CALL_1(SBI_YIELD, request.tohost);
 
     if ((ret = copy_to_user((void __user *)arg, &request, sizeof(request))))
         return ret;
