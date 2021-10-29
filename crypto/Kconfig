@@ -1017,6 +1017,16 @@ config CRYPTO_SHA3
 	  References:
 	  http://keccak.noekeon.org/
 
+config CRYPTO_KECCAK
+	tristate "KECCAK digest algorithm"
+	select CRYPTO_HASH
+    depends on CRYPTO_SHA3
+	help
+	  It's based on cryptographic sponge function family called Keccak.
+
+	  References:
+	  http://keccak.noekeon.org/
+
 config CRYPTO_SM3
 	tristate "SM3 digest algorithm"
 	select CRYPTO_HASH
