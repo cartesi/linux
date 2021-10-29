@@ -1038,6 +1038,16 @@ config CRYPTO_SHA3
 	help
 	  SHA-3 secure hash algorithms (FIPS 202, ISO/IEC 10118-3)
 
+config CRYPTO_KECCAK
+	tristate "KECCAK digest algorithm"
+	select CRYPTO_HASH
+    depends on CRYPTO_SHA3
+	help
+	  It's based on cryptographic sponge function family called Keccak.
+
+	  References:
+	  http://keccak.noekeon.org/
+
 config CRYPTO_SM3
 	tristate
 
