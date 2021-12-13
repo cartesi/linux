@@ -68,7 +68,7 @@ int stream256_encode_ubuf(struct stream256 *me, uint8_t *p, size_t n)
 int stream256_encode_keccak(struct shash_desc *keccak,
         const struct stream256 *me, struct stream256 *hash, uint64_t *index)
 {
-    if (!in_bounds(me, align256(sizeof(union be256))))
+    if (!in_bounds(hash, align256(sizeof(union be256))))
         return -ENOBUFS;
     crypto_shash_init(keccak);
     crypto_shash_update(keccak, me->data, me->offset);
