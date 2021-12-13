@@ -41,12 +41,13 @@ struct rollup_finish {
 
 struct rollup_voucher {
     uint8_t address[CARTESI_ROLLUP_ADDRESS_SIZE];
-
     struct rollup_bytes payload;
+    uint64_t index;
 };
 
 struct rollup_notice {
     struct rollup_bytes payload;
+    uint64_t index;
 };
 
 struct rollup_report {
@@ -80,7 +81,8 @@ struct rollup_report {
  *  - Copies the (address+be32(0x40)+be32(payload_length)+payload) to the tx buffer
  *  - Copies the hash to the next available slot in the voucher-hashes memory range
  *  - Yields automatic with tx-voucher
- * Returns the index of the slot filled in voucher-hashes */
+ *  - Fills in the index field with the corresponding slot from voucher-hashes
+ * Returns 0 */
 #define IOCTL_ROLLUP_WRITE_VOUCHER _IOWR(0xd3, 1, struct rollup_voucher)
 
 /* Outputs a new notice.
@@ -88,7 +90,8 @@ struct rollup_report {
  *  - Copies the (be32(0x20)+be32(payload_length)+payload) to the tx buffer
  *  - Copies the hash to the next available slot in the notice-hashes memory range
  *  - Yields automatic with tx-notice
- * Returns the index of the slot filled in notice-hashes */
+ *  - Fills in the index field with the corresponding slot from notice-hashes
+ * Returns 0 */
 #define IOCTL_ROLLUP_WRITE_NOTICE  _IOWR(0xd3, 2, struct rollup_notice)
 
 /* Outputs a new report.
