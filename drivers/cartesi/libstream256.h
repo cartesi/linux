@@ -20,7 +20,7 @@ int  stream256_encode_u64 (struct stream256 *me, u64 x);
 int  stream256_encode_buf (struct stream256 *me, u8 *p, size_t n);
 int  stream256_encode_ubuf(struct stream256 *me, u8 *p, size_t n);
 int stream256_encode_keccak(struct shash_desc *keccak,
-        const struct stream256 *me, struct stream256 *hash);
+        const struct stream256 *me, struct stream256 *hash, uint64_t*index);
 
 void be256_from_u64(union be256 *me, uint64_t x);
 int be256_to_u64(union be256 *me, uint64_t *x);

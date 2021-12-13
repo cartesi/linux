@@ -229,7 +229,7 @@ static long rollup_ioctl_voucher(struct rollup_device *rollup, unsigned long arg
         (ret = stream256_encode_u64(tx, 0x40)) ||
         (ret = stream256_encode_u64(tx, voucher.payload.length)) ||
         (ret = stream256_encode_ubuf(tx, voucher.payload.data, voucher.payload.length)) ||
-        (ret = stream256_encode_keccak(rollup->keccak, tx, vh))) {
+        (ret = stream256_encode_keccak(rollup->keccak, tx, vh, &voucher.index))) {
         goto unlock;
     }
 
@@ -237,6 +237,9 @@ static long rollup_ioctl_voucher(struct rollup_device *rollup, unsigned long arg
         ret = -EIO;
         goto unlock;
     }
+
+    if ((ret = copy_to_user((void __user*)arg, &voucher, sizeof(voucher))))
+        goto unlock;
 
     /* fall-through */
 unlock:
@@ -265,7 +268,7 @@ static long rollup_ioctl_notice(struct rollup_device *rollup, unsigned long arg)
     if ((ret = stream256_encode_u64(tx, 0x20)) ||
         (ret = stream256_encode_u64(tx, notice.payload.length)) ||
         (ret = stream256_encode_ubuf(tx, notice.payload.data, notice.payload.length)) ||
-        (ret = stream256_encode_keccak(rollup->keccak, tx, nh))) {
+        (ret = stream256_encode_keccak(rollup->keccak, tx, nh, &notice.index))) {
         goto unlock;
     }
 
@@ -273,6 +276,9 @@ static long rollup_ioctl_notice(struct rollup_device *rollup, unsigned long arg)
         ret = -EIO;
         goto unlock;
     }
+
+    if ((ret = copy_to_user((void __user*)arg, &notice, sizeof(notice))))
+        goto unlock;
 
     /* fall-through */
 unlock:
