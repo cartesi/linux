@@ -7,13 +7,7 @@
 #define LIBYIELD_H
 #include <uapi/linux/cartesi/yield.h>
 
-struct cartesi_yield_unpacked {
-    u8 dev;
-    u8 cmd;
-    u8 reason;
-    u32 data;
-};
-
-int cartesi_yield(u64 mode, u64 reason, u64 data, struct cartesi_yield_unpacked *reply);
+int cartesi_yield_validate(struct yield_request *rep);
+int cartesi_yield(u64 mode, u64 reason, u64 data, struct yield_request *reply);
 
 #endif /* LIBYIELD_H */
