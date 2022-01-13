@@ -37,9 +37,9 @@ static u64 _yield_pack(u64 cmd, u64 reason, u64 data)
         ;
 }
 
-static struct cartesi_yield_unpacked _yield_unpack(u64 packed)
+static struct yield_request _yield_unpack(u64 packed)
 {
-    struct cartesi_yield_unpacked out = {
+    struct yield_request out = {
         (u64)packed >> 56,
         (u64)packed <<  8 >> 56,
         (u64)packed << 16 >> 48,
@@ -48,15 +48,21 @@ static struct cartesi_yield_unpacked _yield_unpack(u64 packed)
     return out;
 }
 
-int cartesi_yield(u64 mode, u64 reason, u64 data, struct cartesi_yield_unpacked *rep)
+int cartesi_yield_validate(struct yield_request *req)
+{
+    return req->dev != HTIF_DEVICE_YIELD? -EINVAL:
+        _yield_validate(req->dev, req->cmd, req->reason);
+}
+
+int cartesi_yield(u64 cmd, u64 reason, u64 data, struct yield_request *rep)
 {
     int ret;
     u64 tohost, fromhost;
 
-    if ((ret = _yield_validate(HTIF_DEVICE_YIELD, mode, reason)))
+    if ((ret = _yield_validate(HTIF_DEVICE_YIELD, cmd, reason)))
         return ret;
 
-    tohost = _yield_pack(mode, reason, data);
+    tohost = _yield_pack(cmd, reason, data);
     fromhost = SBI_CALL_1(SBI_YIELD, tohost);
     *rep = _yield_unpack(fromhost);
     return _yield_validate(rep->dev, rep->cmd, rep->reason);
