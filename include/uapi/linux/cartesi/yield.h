@@ -11,8 +11,10 @@
 #include <linux/types.h>
 
 struct yield_request {
-    uint64_t tohost;
-    uint64_t fromhost;
+    __u8 dev;
+    __u8 cmd;
+    __u16 reason;
+    __u32 data;
 };
 
 #define HTIF_DEVICE_YIELD   2
@@ -30,4 +32,4 @@ struct yield_request {
 
 #define IOCTL_YIELD   _IOWR(0xd1, 0, struct yield_request)
 
-#endif
+#endif /* _UAPI_LINUX_CARTESI_YIELD_H */
