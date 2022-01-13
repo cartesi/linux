@@ -79,7 +79,7 @@ static long rollup_ioctl_finish(struct rollup_device *rollup, unsigned long arg)
     u64 rx_length, reason;
     struct rollup_finish finish;
     struct stream256 *rx = &rollup->buffers[RX_BUFFER_INDEX];
-    struct cartesi_yield_unpacked rep;
+    struct yield_request rep;
 
     // NOTE: pointer is known to be aligned
     struct rx_header *rx_header = (void *)rx->data;
@@ -214,7 +214,7 @@ static long rollup_ioctl_voucher(struct rollup_device *rollup, unsigned long arg
     struct rollup_voucher voucher;
     struct stream256 *tx = &rollup->buffers[TX_BUFFER_INDEX],
                          *vh = &rollup->buffers[VOUCHER_HASHES_INDEX];
-    struct cartesi_yield_unpacked rep;
+    struct yield_request rep;
 
     if ((ret = copy_from_user(&voucher, (void __user*)arg, sizeof(voucher)))) {
         printk(KERN_DEBUG "voucher: failed to read struct\n");
@@ -254,7 +254,7 @@ static long rollup_ioctl_notice(struct rollup_device *rollup, unsigned long arg)
     struct stream256 *tx = &rollup->buffers[TX_BUFFER_INDEX],
                      *nh = &rollup->buffers[NOTICE_HASHES_INDEX];
 
-    struct cartesi_yield_unpacked rep;
+    struct yield_request rep;
 
     if ((ret = copy_from_user(&notice, (void __user*)arg, sizeof(notice)))) {
         printk(KERN_DEBUG "notice: failed to read struct\n");
@@ -289,7 +289,7 @@ unlock:
 static long yield_simple_payload(struct stream256 *tx, struct rollup_bytes *payload, u64 cmd, u64 reason)
 {
     long ret;
-    struct cartesi_yield_unpacked rep;
+    struct yield_request rep;
 
     stream256_reset(tx);
     if ((ret = stream256_encode_u64(tx, 0x20)) ||
