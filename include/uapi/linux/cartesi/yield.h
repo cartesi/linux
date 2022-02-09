@@ -26,6 +26,7 @@ struct yield_request {
 #define HTIF_YIELD_REASON_TX_VOUCHER 3
 #define HTIF_YIELD_REASON_TX_NOTICE 4
 #define HTIF_YIELD_REASON_TX_REPORT 5
+#define HTIF_YIELD_REASON_TX_EXCEPTION 6
 
 #define IOCTL_YIELD   _IOWR(0xd1, 0, struct yield_request)
 
