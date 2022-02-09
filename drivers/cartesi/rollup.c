@@ -286,12 +286,29 @@ unlock:
     return ret;
 }
 
+static long yield_simple_payload(struct stream256 *tx, struct rollup_bytes *payload, u64 cmd, u64 reason)
+{
+    long ret;
+    struct cartesi_yield_unpacked rep;
+
+    stream256_reset(tx);
+    if ((ret = stream256_encode_u64(tx, 0x20)) ||
+        (ret = stream256_encode_u64(tx, payload->length)) ||
+        (ret = stream256_encode_ubuf(tx, payload->data, payload->length))) {
+        return ret;
+    }
+
+    if ((ret = cartesi_yield(cmd, reason, 0, &rep))) {
+        return -EIO;
+    }
+    return 0;
+}
+
 static long rollup_ioctl_report(struct rollup_device *rollup, unsigned long arg)
 {
     long ret = 0;
     struct rollup_report report;
     struct stream256 *tx = &rollup->buffers[TX_BUFFER_INDEX];
-    struct cartesi_yield_unpacked rep;
 
     if ((ret = copy_from_user(&report, (void __user*)arg, sizeof(report)))) {
         printk(KERN_DEBUG "report: failed to read struct\n");
@@ -301,20 +318,30 @@ static long rollup_ioctl_report(struct rollup_device *rollup, unsigned long arg)
     if (mutex_lock_interruptible(&rollup->lock))
         return -ERESTARTSYS;
 
-    stream256_reset(tx);
-    if ((ret = stream256_encode_u64(tx, 0x20)) ||
-        (ret = stream256_encode_u64(tx, report.payload.length)) ||
-        (ret = stream256_encode_ubuf(tx, report.payload.data, report.payload.length))) {
-        goto unlock;
+    ret = yield_simple_payload(tx, &report.payload,
+            HTIF_YIELD_AUTOMATIC, HTIF_YIELD_REASON_TX_REPORT);
+
+    mutex_unlock(&rollup->lock);
+    return ret;
+}
+
+static long rollup_ioctl_exception(struct rollup_device *rollup, unsigned long arg)
+{
+    long ret = 0;
+    struct rollup_exception exception;
+    struct stream256 *tx = &rollup->buffers[TX_BUFFER_INDEX];
+
+    if ((ret = copy_from_user(&exception, (void __user*)arg, sizeof(exception)))) {
+        printk(KERN_DEBUG "exception: failed to read struct\n");
+        return ret;
     }
 
-    if ((ret = cartesi_yield(HTIF_YIELD_AUTOMATIC, HTIF_YIELD_REASON_TX_REPORT, 0, &rep))) {
-        ret = -EIO;
-        goto unlock;
-    }
+    if (mutex_lock_interruptible(&rollup->lock))
+        return -ERESTARTSYS;
 
-    /* fall-through */
-unlock:
+    ret = yield_simple_payload(tx, &exception.payload,
+            HTIF_YIELD_MANUAL, HTIF_YIELD_REASON_TX_EXCEPTION);
+
     mutex_unlock(&rollup->lock);
     return ret;
 }
@@ -367,6 +394,8 @@ static long rollup_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
         return rollup_ioctl_report(rollup, arg);
     case IOCTL_ROLLUP_WRITE_VOUCHER:
         return rollup_ioctl_voucher(rollup, arg);
+    case IOCTL_ROLLUP_THROW_EXCEPTION:
+        return rollup_ioctl_exception(rollup, arg);
     }
     return -ENOIOCTLCMD;
 }
