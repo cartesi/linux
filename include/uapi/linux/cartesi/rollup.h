@@ -54,6 +54,10 @@ struct rollup_report {
     struct rollup_bytes payload;
 };
 
+struct rollup_exception {
+    struct rollup_bytes payload;
+};
+
 /* Finishes processing of current advance or inspect.
  * Returns only when next advance input or inspect query is ready.
  * How:
@@ -99,4 +103,10 @@ struct rollup_report {
  *  - Yields automatic with tx-report
  * Returns 0 */
 #define IOCTL_ROLLUP_WRITE_REPORT  _IOWR(0xd3, 3, struct rollup_report)
+
+/* Throws an exeption.
+ *  - Copies the (be32(0x20)+be32(payload_length)+payload) to the tx buffer
+ *  - Yields manual with tx-exception
+ * Returns 0 */
+#define IOCTL_ROLLUP_THROW_EXCEPTION  _IOWR(0xd3, 4, struct rollup_exception)
 #endif
