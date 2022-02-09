@@ -35,7 +35,8 @@ static int tohost_is_valid(uint64_t tohost) {
 
     if (reason != HTIF_YIELD_REASON_PROGRESS && reason != HTIF_YIELD_REASON_RX_ACCEPTED &&
         reason != HTIF_YIELD_REASON_RX_REJECTED && reason != HTIF_YIELD_REASON_TX_VOUCHER &&
-        reason != HTIF_YIELD_REASON_TX_NOTICE && reason != HTIF_YIELD_REASON_TX_REPORT) {
+        reason != HTIF_YIELD_REASON_TX_NOTICE && reason != HTIF_YIELD_REASON_TX_REPORT &&
+        reason != HTIF_YIELD_REASON_TX_EXCEPTION) {
         return 0;
     }
 
