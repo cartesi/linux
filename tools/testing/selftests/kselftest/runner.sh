@@ -4,7 +4,7 @@
 # Runs a set of tests in a given subdirectory.
 export skip_rc=4
 export timeout_rc=124
-export logfile=/dev/stdout
+export logfile=/dev/tty
 export per_test_logging=
 
 # Defaults for "settings" file fields:
