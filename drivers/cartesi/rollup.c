@@ -169,7 +169,7 @@ static long rollup_ioctl_read_advance(struct rollup_device *rollup, unsigned lon
 
     memcpy(advance.metadata.msg_sender, &imh->msg_sender, sizeof(advance.metadata.msg_sender));
     if ((ret = be256_to_u64(&imh->blocknumber, &advance.metadata.block_number)) ||
-        (ret = be256_to_u64(&imh->timestamp, &advance.metadata.time_stamp)) ||
+        (ret = be256_to_u64(&imh->timestamp, &advance.metadata.timestamp)) ||
         (ret = be256_to_u64(&imh->epoch_number, &advance.metadata.epoch_index)) ||
         (ret = be256_to_u64(&imh->input_number, &advance.metadata.input_index))) {
         goto unlock;
