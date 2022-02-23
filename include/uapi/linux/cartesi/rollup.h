@@ -16,7 +16,7 @@ struct rollup_bytes {
 struct rollup_input_metadata {
     uint8_t msg_sender[CARTESI_ROLLUP_ADDRESS_SIZE];
     uint64_t block_number;
-    uint64_t time_stamp; /* not sure this can be converted from uint256_t big endian to uint64_t... */
+    uint64_t timestamp;
     uint64_t epoch_index;
     uint64_t input_index;
 };
