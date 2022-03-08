@@ -92,6 +92,7 @@ static int yield_device_probe(struct platform_device *pdev)
      * `yield` entry, that is, with no bits enabled */
     if (retrieve_enabled_cmds(yield) == 0) {
         ret = -ENODEV;
+        dev_err(&pdev->dev, "failed to retrieve enabled yield commands\n");
         goto free_yield;
     }
 
@@ -102,6 +103,7 @@ static int yield_device_probe(struct platform_device *pdev)
         dev_err(&pdev->dev, "failed to register miscdevice\n");
         goto free_yield;
     }
+    pr_info(MODULE_DESC ": Module loaded\n");
     return 0;
 
 free_yield:
@@ -114,6 +116,7 @@ static int yield_device_remove(struct platform_device *pdev)
     struct yield_device *yield = platform_get_drvdata(pdev);
     misc_deregister(&yield->mdev);
     kfree(yield);
+    dev_info(&pdev->dev, "unregistered\n");
     return 0;
 }
 
