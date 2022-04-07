@@ -216,6 +216,11 @@ static long rollup_ioctl_voucher(struct rollup_device *rollup, unsigned long arg
                          *vh = &rollup->buffers[VOUCHER_HASHES_INDEX];
     struct yield_request rep;
 
+    if (rollup->next_request_type == CARTESI_ROLLUP_INSPECT_STATE) {
+        printk(KERN_DEBUG "voucher: trying to emit a voucher during a inspect\n");
+        return -EOPNOTSUPP;
+    }
+
     if ((ret = copy_from_user(&voucher, (void __user*)arg, sizeof(voucher)))) {
         printk(KERN_DEBUG "voucher: failed to read struct\n");
         return ret;
@@ -255,6 +260,11 @@ static long rollup_ioctl_notice(struct rollup_device *rollup, unsigned long arg)
                      *nh = &rollup->buffers[NOTICE_HASHES_INDEX];
 
     struct yield_request rep;
+
+    if (rollup->next_request_type == CARTESI_ROLLUP_INSPECT_STATE) {
+        printk(KERN_DEBUG "notice: trying to emit a notice during a inspect\n");
+        return -EOPNOTSUPP;
+    }
 
     if ((ret = copy_from_user(&notice, (void __user*)arg, sizeof(notice)))) {
         printk(KERN_DEBUG "notice: failed to read struct\n");
