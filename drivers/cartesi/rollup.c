@@ -25,6 +25,7 @@
 #define FDT_ROLLUP_PATH "/rollup"
 #define MODULE_DESC "Cartesi Machine " DEVICE_NAME " device"
 
+#define CARTESI_ROLLUP_INITIAL_STATE (-1)
 
 /* NOTE: keep in sync with node_paths */
 #define TX_BUFFER_INDEX      0
@@ -217,12 +218,12 @@ static long rollup_ioctl_voucher(struct rollup_device *rollup, unsigned long arg
     struct yield_request rep;
 
     if (rollup->next_request_type == CARTESI_ROLLUP_INSPECT_STATE) {
-        printk(KERN_DEBUG "voucher: trying to emit a voucher during a inspect\n");
+        dev_warn(&rollup->pdev->dev, "trying to emit a voucher during a inspect\n");
         return -EOPNOTSUPP;
     }
 
     if ((ret = copy_from_user(&voucher, (void __user*)arg, sizeof(voucher)))) {
-        printk(KERN_DEBUG "voucher: failed to read struct\n");
+        dev_warn(&rollup->pdev->dev, "failed to read voucher struct\n");
         return ret;
     }
 
@@ -262,12 +263,12 @@ static long rollup_ioctl_notice(struct rollup_device *rollup, unsigned long arg)
     struct yield_request rep;
 
     if (rollup->next_request_type == CARTESI_ROLLUP_INSPECT_STATE) {
-        printk(KERN_DEBUG "notice: trying to emit a notice during a inspect\n");
+        dev_warn(&rollup->pdev->dev, "trying to emit a notice during a inspect\n");
         return -EOPNOTSUPP;
     }
 
     if ((ret = copy_from_user(&notice, (void __user*)arg, sizeof(notice)))) {
-        printk(KERN_DEBUG "notice: failed to read struct\n");
+        dev_warn(&rollup->pdev->dev, "failed to read notice struct\n");
         return ret;
     }
 
@@ -321,7 +322,7 @@ static long rollup_ioctl_report(struct rollup_device *rollup, unsigned long arg)
     struct stream256 *tx = &rollup->buffers[TX_BUFFER_INDEX];
 
     if ((ret = copy_from_user(&report, (void __user*)arg, sizeof(report)))) {
-        printk(KERN_DEBUG "report: failed to read struct\n");
+        dev_warn(&rollup->pdev->dev, "failed to read report struct\n");
         return ret;
     }
 
@@ -342,7 +343,7 @@ static long rollup_ioctl_exception(struct rollup_device *rollup, unsigned long a
     struct stream256 *tx = &rollup->buffers[TX_BUFFER_INDEX];
 
     if ((ret = copy_from_user(&exception, (void __user*)arg, sizeof(exception)))) {
-        printk(KERN_DEBUG "exception: failed to read struct\n");
+        dev_warn(&rollup->pdev->dev, "failed to read exception struct\n");
         return ret;
     }
 
@@ -388,8 +389,13 @@ static long rollup_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
     if ((rollup = to_rollup_device(file)) == NULL)
         return -EBADF;
-    if (cmd != IOCTL_ROLLUP_FINISH && rollup->next_request_type == -1)
+    if ((rollup->next_request_type == CARTESI_ROLLUP_INITIAL_STATE) && !(
+            (cmd == IOCTL_ROLLUP_FINISH) ||
+            (cmd == IOCTL_ROLLUP_THROW_EXCEPTION))) {
+        dev_warn(&rollup->pdev->dev,
+                "first ioctl must be either `finish' or `throw_exception'\n");
         return -EBADE;
+    }
 
     switch (cmd) {
     case IOCTL_ROLLUP_FINISH:
@@ -483,7 +489,7 @@ static int rollup_driver_probe(struct platform_device *pdev)
 
     alg = crypto_alloc_shash("keccak-256-generic", CRYPTO_ALG_TYPE_SHASH, 0);
     if (IS_ERR(alg)) {
-        pr_info("failed to create keccak-256\n");
+        dev_err(&pdev->dev, "failed to create keccak-256\n");
         goto free_miscdevice;
     }
 
@@ -496,6 +502,7 @@ static int rollup_driver_probe(struct platform_device *pdev)
 
     platform_set_drvdata(pdev, rollup);
     rollup->pdev = pdev;
+    rollup->next_request_type = CARTESI_ROLLUP_INITIAL_STATE;
 
     mutex_init(&rollup->lock);
     pr_info(MODULE_DESC ": Module loaded\n");
