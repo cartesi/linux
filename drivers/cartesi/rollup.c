@@ -231,7 +231,7 @@ static long rollup_ioctl_voucher(struct rollup_device *rollup, unsigned long arg
         return -ERESTARTSYS;
 
     stream256_reset(tx);
-    if ((ret = stream256_encode_buf(tx, voucher.address, sizeof(voucher.address))) ||
+    if ((ret = stream256_encode_address(tx, voucher.address, sizeof(voucher.address))) ||
         (ret = stream256_encode_u64(tx, 0x40)) ||
         (ret = stream256_encode_u64(tx, voucher.payload.length)) ||
         (ret = stream256_encode_ubuf(tx, voucher.payload.data, voucher.payload.length)) ||
@@ -297,7 +297,7 @@ unlock:
     return ret;
 }
 
-static long yield_simple_payload(struct stream256 *tx, struct rollup_bytes *payload, u64 cmd, u64 reason)
+static long yield_simple_payload(stream256_encode_buf_t enc, struct stream256 *tx, struct rollup_bytes *payload, u64 cmd, u64 reason)
 {
     long ret;
     struct yield_request rep;
@@ -305,7 +305,7 @@ static long yield_simple_payload(struct stream256 *tx, struct rollup_bytes *payl
     stream256_reset(tx);
     if ((ret = stream256_encode_u64(tx, 0x20)) ||
         (ret = stream256_encode_u64(tx, payload->length)) ||
-        (ret = stream256_encode_ubuf(tx, payload->data, payload->length))) {
+        (ret = enc(tx, payload->data, payload->length))) {
         return ret;
     }
 
@@ -329,7 +329,7 @@ static long rollup_ioctl_report(struct rollup_device *rollup, unsigned long arg)
     if (mutex_lock_interruptible(&rollup->lock))
         return -ERESTARTSYS;
 
-    ret = yield_simple_payload(tx, &report.payload,
+    ret = yield_simple_payload(stream256_encode_ubuf, tx, &report.payload,
             HTIF_YIELD_AUTOMATIC, HTIF_YIELD_REASON_TX_REPORT);
 
     mutex_unlock(&rollup->lock);
@@ -350,7 +350,7 @@ static long rollup_ioctl_exception(struct rollup_device *rollup, unsigned long a
     if (mutex_lock_interruptible(&rollup->lock))
         return -ERESTARTSYS;
 
-    ret = yield_simple_payload(tx, &exception.payload,
+    ret = yield_simple_payload(stream256_encode_ubuf, tx, &exception.payload,
             HTIF_YIELD_MANUAL, HTIF_YIELD_REASON_TX_EXCEPTION);
 
     mutex_unlock(&rollup->lock);
@@ -392,8 +392,19 @@ static long rollup_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
     if ((rollup->next_request_type == CARTESI_ROLLUP_INITIAL_STATE) && !(
             (cmd == IOCTL_ROLLUP_FINISH) ||
             (cmd == IOCTL_ROLLUP_THROW_EXCEPTION))) {
-        dev_warn(&rollup->pdev->dev,
-                "first ioctl must be either `finish' or `throw_exception'\n");
+
+        int ret;
+        struct stream256 *tx = &rollup->buffers[TX_BUFFER_INDEX];
+        unsigned char msg[] = "first ioctl must be either `finish' or `throw_exception'";
+        struct rollup_bytes bytes = {msg, sizeof(msg)-1};
+        dev_warn(&rollup->pdev->dev, msg);
+        if (mutex_lock_interruptible(&rollup->lock))
+            return -ERESTARTSYS;
+
+        ret = yield_simple_payload(stream256_encode_buf, tx, &bytes,
+                HTIF_YIELD_MANUAL, HTIF_YIELD_REASON_TX_EXCEPTION);
+
+        mutex_unlock(&rollup->lock);
         return -EBADE;
     }
 
