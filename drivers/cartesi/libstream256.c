@@ -40,13 +40,24 @@ int stream256_encode_u64(struct stream256 *me, uint64_t x)
     return 0;
 }
 
-int stream256_encode_buf(struct stream256 *me, uint8_t *p, size_t n)
+int stream256_encode_address(struct stream256 *me, uint8_t *p, size_t n)
 {
     if (!in_bounds(me, align256(n)))
         return -ENOBUFS;
     pad(me, n);
     memcpy(me->data + me->offset, p, n);
     me->offset += n;
+
+    return 0;
+}
+
+int stream256_encode_buf(struct stream256 *me, uint8_t *p, size_t n)
+{
+    if (!in_bounds(me, align256(n)))
+        return -ENOBUFS;
+    memcpy(me->data + me->offset, p, n);
+    me->offset += n;
+    pad(me, n);
 
     return 0;
 }
