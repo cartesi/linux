@@ -15,8 +15,11 @@ union be256 {
     u8     data[32];
 };
 
+typedef int (*stream256_encode_buf_t)(struct stream256 *me, u8 *p, size_t n);
+
 void stream256_reset      (struct stream256 *me);
 int  stream256_encode_u64 (struct stream256 *me, u64 x);
+int  stream256_encode_address(struct stream256 *me, u8 *p, size_t n);
 int  stream256_encode_buf (struct stream256 *me, u8 *p, size_t n);
 int  stream256_encode_ubuf(struct stream256 *me, u8 *p, size_t n);
 int stream256_encode_keccak(struct shash_desc *keccak,
