@@ -135,7 +135,6 @@ static const struct file_operations dehash_fileops = {
 
 static int dehash_driver_probe(struct platform_device *pdev)
 {
-    uint64_t tstart, tlength;
     struct resource *res;
     struct dehash_device *dhd;
     int ret = -ENXIO;
@@ -157,18 +156,10 @@ static int dehash_driver_probe(struct platform_device *pdev)
         goto error;
     }
 
-    tstart = dhd->registers[DHD_IDX_TSTART];
-    tlength = dhd->registers[DHD_IDX_TLENGTH];
-    if (!tlength) {
-        dev_err(&pdev->dev, "DHD is not present (tlength == 0)");
-        goto error;
-    }
-    if (!request_mem_region(tstart, tlength, res->name)) {
-        dev_err(&pdev->dev, "DHD target memory request failed");
-        goto error;
-    }
-    dhd->target = ioremap(tstart, tlength);
-    if (!dhd->target) {
+    dhd->target = devm_ioremap(&pdev->dev,
+        dhd->registers[DHD_IDX_TSTART],
+        dhd->registers[DHD_IDX_TLENGTH]);
+    if (dhd->target == NULL) {
         dev_err(&pdev->dev, "failed to map DHD target memory range");
         goto error;
     }
