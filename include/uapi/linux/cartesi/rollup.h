@@ -64,20 +64,37 @@ struct rollup_exception {
  *   Yields manual with rx-accepted if accept is true and yields manual with rx-rejected if accept is false.
  *   Once yield returns, checks the data field in fromhost to decide if next request is advance or inspect.
  *   Returns type and payload length of next request in struct
- * Returns 0 */
+ * on success:
+ *   Returns 0
+ * on failure:
+ *   EFAULT in case of invalid arguments
+ *   ERESTARTSYS in case of an internal lock error
+ *   EIO in case of yield device error
+ *   EOPNOTSUPP in case of an invalid next_request_type */
 #define IOCTL_ROLLUP_FINISH  _IOWR(0xd3, 0, struct rollup_finish)
 
 /* Obtains arguments to advance state
  * How:
  *   Reads from input metadat memory range and convert data.
  *   Reads from rx buffer and copy to payload
- * Returns 0 */
+ * on success:
+ *   Returns 0
+ * on failure:
+ *   EOPNOTSUPP in case the driver is not currently processing an advance state
+ *   EFAULT in case of invalid arguments
+ *   ERESTARTSYS in case of an internal lock error
+ *   EDOM in case of an integer larger than 64bits is received */
 #define IOCTL_ROLLUP_READ_ADVANCE_STATE _IOWR(0xd3, 0, struct rollup_advance_state)
 
 /* Obtains arguments to inspect state
  * How:
  *   Reads from rx buffer and copy to payload
- * Returns 0 */
+ * on success:
+ *   Returns 0
+ * on failure:
+ *   EOPNOTSUPP in case the driver is not currently processing an inspect state
+ *   EFAULT in case of invalid arguments
+ *   ERESTARTSYS in case of an internal lock error */
 #define IOCTL_ROLLUP_READ_INSPECT_STATE _IOWR(0xd3, 0, struct rollup_inspect_state)
 
 /* Outputs a new voucher.
@@ -86,7 +103,14 @@ struct rollup_exception {
  *  - Copies the hash to the next available slot in the voucher-hashes memory range
  *  - Yields automatic with tx-voucher
  *  - Fills in the index field with the corresponding slot from voucher-hashes
- * Returns 0 */
+ * on success:
+ *   Returns 0
+ * on failure:
+ *   EOPNOTSUPP in case the driver is currently processing an inspect state
+ *   EFAULT in case of invalid arguments
+ *   ERESTARTSYS in case of an internal lock error
+ *   EDOM in case of an integer larger than 64bits is received
+ *   EIO in case of yield device error */
 #define IOCTL_ROLLUP_WRITE_VOUCHER _IOWR(0xd3, 1, struct rollup_voucher)
 
 /* Outputs a new notice.
@@ -95,18 +119,35 @@ struct rollup_exception {
  *  - Copies the hash to the next available slot in the notice-hashes memory range
  *  - Yields automatic with tx-notice
  *  - Fills in the index field with the corresponding slot from notice-hashes
- * Returns 0 */
+ * on success:
+ *   Returns 0
+ * on failure:
+ *   EOPNOTSUPP in case the driver is currently processing an inspect state
+ *   EFAULT in case of invalid arguments
+ *   ERESTARTSYS in case of an internal lock error
+ *   EDOM in case of an integer larger than 64bits is received
+ *   EIO in case of yield device error */
 #define IOCTL_ROLLUP_WRITE_NOTICE  _IOWR(0xd3, 2, struct rollup_notice)
 
 /* Outputs a new report.
  *  - Copies the (be32(0x20)+be32(payload_length)+payload) to the tx buffer
  *  - Yields automatic with tx-report
- * Returns 0 */
+ * on success:
+ *   Returns 0
+ * on failure:
+ *   EFAULT in case of invalid arguments
+ *   ERESTARTSYS in case of an internal lock error
+ *   EIO in case of yield device error */
 #define IOCTL_ROLLUP_WRITE_REPORT  _IOWR(0xd3, 3, struct rollup_report)
 
 /* Throws an exeption.
  *  - Copies the (be32(0x20)+be32(payload_length)+payload) to the tx buffer
  *  - Yields manual with tx-exception
- * Returns 0 */
+ * on success:
+ *   Returns 0
+ * on failure:
+ *   EFAULT in case of invalid arguments
+ *   ERESTARTSYS in case of an internal lock error
+ *   EIO in case of yield device error */
 #define IOCTL_ROLLUP_THROW_EXCEPTION  _IOWR(0xd3, 4, struct rollup_exception)
 #endif
