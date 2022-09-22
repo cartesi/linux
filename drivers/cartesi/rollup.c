@@ -86,7 +86,7 @@ static long rollup_ioctl_finish(struct rollup_device *rollup, unsigned long arg)
     struct rx_header *rx_header = (void *)rx->data;
 
     if ((ret = copy_from_user(&finish, (void __user*)arg, sizeof(finish)))) {
-        return ret;
+        return -EFAULT;
     }
 
     reason = finish.accept_previous_request?
@@ -103,7 +103,7 @@ static long rollup_ioctl_finish(struct rollup_device *rollup, unsigned long arg)
 
     if (rep.data != CARTESI_ROLLUP_ADVANCE_STATE &&
         rep.data != CARTESI_ROLLUP_INSPECT_STATE) {
-        ret = -EIO;
+        ret = -EOPNOTSUPP;
         goto unlock;
     }
     rollup->next_request_type = rep.data;
@@ -119,7 +119,7 @@ static long rollup_ioctl_finish(struct rollup_device *rollup, unsigned long arg)
 
     finish.next_request_payload_length = rx_length;
     if ((ret = copy_to_user((void __user*)arg, &finish, sizeof(finish))))
-        return ret;
+        return -EFAULT;
 
     return 0;
 unlock:
@@ -157,16 +157,18 @@ static long rollup_ioctl_read_advance(struct rollup_device *rollup, unsigned lon
     struct rollup_advance_state advance;
 
     if (rollup->next_request_type != CARTESI_ROLLUP_ADVANCE_STATE)
-        return -EINVAL;
+        return -EOPNOTSUPP;
 
     if ((ret = copy_from_user(&advance, (void __user*)arg, sizeof(advance))))
-        return ret;
+        return -EFAULT;
 
     if (mutex_lock_interruptible(&rollup->lock))
         return -ERESTARTSYS;
 
-    if ((ret = copy_rx(rollup, &advance.payload)))
+    if ((ret = copy_rx(rollup, &advance.payload))) {
+        ret = -EFAULT;
         goto unlock;
+    }
 
     memcpy(advance.metadata.msg_sender, &imh->msg_sender, sizeof(advance.metadata.msg_sender));
     if ((ret = be256_to_u64(&imh->blocknumber, &advance.metadata.block_number)) ||
@@ -178,7 +180,7 @@ static long rollup_ioctl_read_advance(struct rollup_device *rollup, unsigned lon
     mutex_unlock(&rollup->lock);
 
     if ((ret = copy_to_user((void __user*)arg, &advance, sizeof(advance))))
-        return ret;
+        return -EFAULT;
 
     return 0;
 unlock:
@@ -192,16 +194,18 @@ static long rollup_ioctl_read_inspect(struct rollup_device *rollup, unsigned lon
     struct rollup_inspect_state inspect;
 
     if (rollup->next_request_type != CARTESI_ROLLUP_INSPECT_STATE)
-        return -EINVAL;
+        return -EOPNOTSUPP;
 
     if ((ret = copy_from_user(&inspect, (void __user*)arg, sizeof(inspect))))
-        return ret;
+        return -EFAULT;
 
     if (mutex_lock_interruptible(&rollup->lock))
         return -ERESTARTSYS;
 
-    if ((ret = copy_rx(rollup, &inspect.payload)))
+    if ((ret = copy_rx(rollup, &inspect.payload))) {
+        ret = -EFAULT;
         goto unlock;
+    }
 
     /* fall-through */
 unlock:
@@ -224,7 +228,7 @@ static long rollup_ioctl_voucher(struct rollup_device *rollup, unsigned long arg
 
     if ((ret = copy_from_user(&voucher, (void __user*)arg, sizeof(voucher)))) {
         dev_warn(&rollup->pdev->dev, "failed to read voucher struct\n");
-        return ret;
+        return -EFAULT;
     }
 
     if (mutex_lock_interruptible(&rollup->lock))
@@ -244,8 +248,10 @@ static long rollup_ioctl_voucher(struct rollup_device *rollup, unsigned long arg
         goto unlock;
     }
 
-    if ((ret = copy_to_user((void __user*)arg, &voucher, sizeof(voucher))))
+    if ((ret = copy_to_user((void __user*)arg, &voucher, sizeof(voucher)))) {
+        ret = -EFAULT;
         goto unlock;
+    }
 
     /* fall-through */
 unlock:
@@ -269,7 +275,7 @@ static long rollup_ioctl_notice(struct rollup_device *rollup, unsigned long arg)
 
     if ((ret = copy_from_user(&notice, (void __user*)arg, sizeof(notice)))) {
         dev_warn(&rollup->pdev->dev, "failed to read notice struct\n");
-        return ret;
+        return -EFAULT;
     }
 
     if (mutex_lock_interruptible(&rollup->lock))
@@ -288,8 +294,10 @@ static long rollup_ioctl_notice(struct rollup_device *rollup, unsigned long arg)
         goto unlock;
     }
 
-    if ((ret = copy_to_user((void __user*)arg, &notice, sizeof(notice))))
+    if ((ret = copy_to_user((void __user*)arg, &notice, sizeof(notice)))) {
+        ret = -EFAULT;
         goto unlock;
+    }
 
     /* fall-through */
 unlock:
@@ -323,7 +331,7 @@ static long rollup_ioctl_report(struct rollup_device *rollup, unsigned long arg)
 
     if ((ret = copy_from_user(&report, (void __user*)arg, sizeof(report)))) {
         dev_warn(&rollup->pdev->dev, "failed to read report struct\n");
-        return ret;
+        return -EFAULT;
     }
 
     if (mutex_lock_interruptible(&rollup->lock))
@@ -344,7 +352,7 @@ static long rollup_ioctl_exception(struct rollup_device *rollup, unsigned long a
 
     if ((ret = copy_from_user(&exception, (void __user*)arg, sizeof(exception)))) {
         dev_warn(&rollup->pdev->dev, "failed to read exception struct\n");
-        return ret;
+        return -EFAULT;
     }
 
     if (mutex_lock_interruptible(&rollup->lock))
