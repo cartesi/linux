@@ -6,19 +6,21 @@
 
 #define CARTESI_ROLLUP_ADDRESS_SIZE 20
 
+#include <linux/ioctl.h>
+#include <linux/types.h>
 #include <stdbool.h>
 
 struct rollup_bytes {
-    unsigned char *data;
-    uint64_t length;
+    __u8 *data;
+    __u64 length;
 };
 
 struct rollup_input_metadata {
-    uint8_t msg_sender[CARTESI_ROLLUP_ADDRESS_SIZE];
-    uint64_t block_number;
-    uint64_t timestamp;
-    uint64_t epoch_index;
-    uint64_t input_index;
+    __u8 msg_sender[CARTESI_ROLLUP_ADDRESS_SIZE];
+    __u64 block_number;
+    __u64 timestamp;
+    __u64 epoch_index;
+    __u64 input_index;
 };
 
 struct rollup_advance_state {
@@ -40,14 +42,14 @@ struct rollup_finish {
 };
 
 struct rollup_voucher {
-    uint8_t address[CARTESI_ROLLUP_ADDRESS_SIZE];
+    __u8 address[CARTESI_ROLLUP_ADDRESS_SIZE];
     struct rollup_bytes payload;
-    uint64_t index;
+    __u64 index;
 };
 
 struct rollup_notice {
     struct rollup_bytes payload;
-    uint64_t index;
+    __u64 index;
 };
 
 struct rollup_report {
