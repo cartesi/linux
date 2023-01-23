@@ -42,7 +42,7 @@ struct rollup_finish {
 };
 
 struct rollup_voucher {
-    __u8 address[CARTESI_ROLLUP_ADDRESS_SIZE];
+    __u8 destination[CARTESI_ROLLUP_ADDRESS_SIZE];
     struct rollup_bytes payload;
     __u64 index;
 };
