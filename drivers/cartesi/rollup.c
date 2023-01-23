@@ -235,7 +235,7 @@ static long rollup_ioctl_voucher(struct rollup_device *rollup, unsigned long arg
         return -ERESTARTSYS;
 
     stream256_reset(tx);
-    if ((ret = stream256_encode_address(tx, voucher.address, sizeof(voucher.address))) ||
+    if ((ret = stream256_encode_address(tx, voucher.destination, sizeof(voucher.destination))) ||
         (ret = stream256_encode_u64(tx, 0x40)) ||
         (ret = stream256_encode_u64(tx, voucher.payload.length)) ||
         (ret = stream256_encode_ubuf(tx, voucher.payload.data, voucher.payload.length)) ||
