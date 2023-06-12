@@ -8,7 +8,6 @@
 
 #include <linux/ioctl.h>
 #include <linux/types.h>
-#include <stdbool.h>
 
 struct rollup_bytes {
     __u8 *data;
