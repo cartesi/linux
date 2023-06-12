@@ -8,7 +8,6 @@
 
 #include <linux/ioctl.h>
 #include <linux/types.h>
-#include <stdbool.h>
 
 struct rollup_bytes {
     __u8 *data;
@@ -35,7 +34,7 @@ struct rollup_inspect_state {
 struct rollup_finish {
     /* True if previous request should be accepted */
     /* False if previous request should be rejected */
-    bool accept_previous_request;
+    _Bool accept_previous_request;
 
     int next_request_type; /* either CARTESI_ROLLUP_ADVANCE or CARTESI_ROLLUP_INSPECT */
     int next_request_payload_length;
