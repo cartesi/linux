@@ -65,8 +65,6 @@ int cartesi_yield(u64 cmd, u64 reason, u64 data, struct yield_request *rep)
 
     tohost = _yield_pack(cmd, reason, data);
     sbiret = sbi_ecall(SBI_YIELD, 0, tohost, 0, 0, 0, 0, 0);
-    /* since we are sbi 0.1 compatible, return value is in a0,
-     * so we use sbiret.error instead of sbiret.value */
-    *rep = _yield_unpack(sbiret.error);
+    *rep = _yield_unpack(sbiret.value);
     return _yield_validate(rep->dev, rep->cmd, rep->reason);
 }
