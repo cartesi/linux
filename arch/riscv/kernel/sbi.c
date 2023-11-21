@@ -595,7 +595,7 @@ void __init sbi_init(void)
 	pr_info("SBI specification v%lu.%lu detected\n",
 		sbi_major_version(), sbi_minor_version());
 
-	if (!sbi_spec_is_0_1()) {
+	if (!sbi_spec_is_0_1() && !CONFIG_RISCV_SBI_V01) {
 		pr_info("SBI implementation ID=0x%lx Version=0x%lx\n",
 			sbi_get_firmware_id(), sbi_get_firmware_version());
 		if (sbi_probe_extension(SBI_EXT_TIME)) {
