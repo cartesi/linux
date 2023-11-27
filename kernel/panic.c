@@ -437,7 +437,7 @@ void panic(const char *fmt, ...)
 #endif
 
 #ifdef CONFIG_CARTESI_HALT_ON_PANIC
-machine_halt();
+	machine_restart("255");
 #endif
 
 #if defined(CONFIG_S390)
