@@ -19,13 +19,8 @@ EXPORT_SYMBOL(pm_power_off);
 
 void machine_restart(char *cmd)
 {
-	int32_t type   = 0,
-		reason = 0;
-
-	if (kstrtoint(cmd, 10, &reason) != 0)
-		type = 1;
 	do_kernel_restart(cmd);
-	sbi_ecall(SBI_EXT_0_1_SHUTDOWN, 0, type, reason, 0, 0, 0, 0);
+	while (1);
 }
 
 void machine_halt(void)
