@@ -14,14 +14,12 @@ config CARTESI_YIELD_DRIVER
     help
         Cartesi Machine Yield Device
 
-config CARTESI_ROLLUP_DRIVER
-    bool "Cartesi Machine Rollup Device"
+config CARTESI_MACHINE_IO_DRIVER
+    bool "Cartesi Machine IO Device"
     depends on CARTESI_MACHINE
-    depends on CRYPTO_KECCAK
     default y
     help
-        Cartesi Machine Rollup Device
-
+        Cartesi Machine IO Device
 
 config CARTESI_HALT_ON_PANIC
     bool "Halt machine on kernel panic"
