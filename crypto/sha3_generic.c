@@ -237,35 +237,6 @@ int crypto_sha3_final(struct shash_desc *desc, u8 *out)
 }
 EXPORT_SYMBOL(crypto_sha3_final);
 
-#ifdef CONFIG_CRYPTO_KECCAK
-int crypto_keccak_final(struct shash_desc *desc, u8 *out)
-{
-	struct sha3_state *sctx = shash_desc_ctx(desc);
-	unsigned int i, inlen = sctx->partial;
-	unsigned int digest_size = crypto_shash_digestsize(desc->tfm);
-	__le64 *digest = (__le64 *)out;
-
-	sctx->buf[inlen++] = 0x01;
-	memset(sctx->buf + inlen, 0, sctx->rsiz - inlen);
-	sctx->buf[sctx->rsiz - 1] |= 0x80;
-
-	for (i = 0; i < sctx->rsizw; i++)
-		sctx->st[i] ^= get_unaligned_le64(sctx->buf + 8 * i);
-
-	keccakf(sctx->st);
-
-	for (i = 0; i < digest_size / 8; i++)
-		put_unaligned_le64(sctx->st[i], digest++);
-
-	if (digest_size & 4)
-		put_unaligned_le32(sctx->st[i], (__le32 *)digest);
-
-	memset(sctx, 0, sizeof(*sctx));
-	return 0;
-}
-EXPORT_SYMBOL(crypto_keccak_final);
-#endif
-
 static struct shash_alg algs[] = { {
 	.digestsize		= SHA3_224_DIGEST_SIZE,
 	.init			= crypto_sha3_init,
@@ -306,18 +277,6 @@ static struct shash_alg algs[] = { {
 	.base.cra_driver_name	= "sha3-512-generic",
 	.base.cra_blocksize	= SHA3_512_BLOCK_SIZE,
 	.base.cra_module	= THIS_MODULE,
-#ifdef CONFIG_CRYPTO_KECCAK
-}, {
-	.digestsize		= SHA3_256_DIGEST_SIZE,
-	.init			= crypto_sha3_init,
-	.update			= crypto_sha3_update,
-	.final			= crypto_keccak_final,
-	.descsize		= sizeof(struct sha3_state),
-	.base.cra_name		= "keccak-256",
-	.base.cra_driver_name	= "keccak-256-generic",
-	.base.cra_blocksize	= SHA3_256_BLOCK_SIZE,
-	.base.cra_module	= THIS_MODULE,
-#endif
 } };
 
 static int __init sha3_generic_mod_init(void)
@@ -344,7 +303,3 @@ MODULE_ALIAS_CRYPTO("sha3-384");
 MODULE_ALIAS_CRYPTO("sha3-384-generic");
 MODULE_ALIAS_CRYPTO("sha3-512");
 MODULE_ALIAS_CRYPTO("sha3-512-generic");
-#ifdef CONFIG_CRYPTO_KECCAK
-MODULE_ALIAS_CRYPTO("keccak-256");
-MODULE_ALIAS_CRYPTO("keccak-256-generic");
-#endif
