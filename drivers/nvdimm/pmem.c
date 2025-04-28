@@ -197,6 +197,28 @@ static blk_status_t pmem_do_write(struct pmem_device *pmem,
 	return BLK_STS_OK;
 }
 
+static blk_status_t pmem_do_discard(struct pmem_device *pmem,
+			sector_t sector, unsigned int len)
+{
+	phys_addr_t pmem_off = to_offset(pmem, sector);
+	void *pmem_addr = pmem->virt_addr + pmem_off;
+
+	if (unlikely(is_bad_pmem(&pmem->bb, sector, len)))
+		return BLK_STS_IOERR;
+
+	/*
+	 * Zero out the specified memory region on discard operation.
+	 * This allows the emulator to reclaim physical storage in the host
+	 * when it detects the pages became pristine (zeroed).
+	 * This function is called when:
+	 * - Files are deleted on filesystems mounted with 'discard' option (e.g., ext4)
+	 * - Explicit fallocate(2) with FALLOC_FL_PUNCH_HOLE flag
+	 * - During filesystem-initiated FITRIM operations
+	 */
+	memset(pmem_addr, 0, len);
+	return BLK_STS_OK;
+}
+
 static void pmem_submit_bio(struct bio *bio)
 {
 	int ret = 0;
@@ -207,6 +229,12 @@ static void pmem_submit_bio(struct bio *bio)
 	struct bvec_iter iter;
 	struct pmem_device *pmem = bio->bi_bdev->bd_disk->private_data;
 	struct nd_region *nd_region = to_region(pmem);
+
+	if (unlikely(op_is_discard(bio->bi_opf))) {
+		bio->bi_status = pmem_do_discard(pmem, bio->bi_iter.bi_sector, bio->bi_iter.bi_size);
+		bio_endio(bio);
+		return;
+	}
 
 	if (bio->bi_opf & REQ_PREFLUSH)
 		ret = nvdimm_flush(nd_region, bio);
@@ -543,6 +571,9 @@ static int pmem_attach_disk(struct device *dev,
 	blk_queue_max_hw_sectors(q, UINT_MAX);
 	blk_queue_flag_set(QUEUE_FLAG_NONROT, q);
 	blk_queue_flag_set(QUEUE_FLAG_SYNCHRONOUS, q);
+	q->limits.discard_granularity = PAGE_SIZE;
+	blk_queue_max_discard_segments(q, 1);
+	blk_queue_max_discard_sectors(q, UINT_MAX);
 	if (pmem->pfn_flags & PFN_MAP)
 		blk_queue_flag_set(QUEUE_FLAG_DAX, q);
 
