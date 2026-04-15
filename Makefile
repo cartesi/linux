@@ -2,7 +2,7 @@
 VERSION = 6
 PATCHLEVEL = 5
 SUBLEVEL = 13
-EXTRAVERSION = -ctsi-1
+EXTRAVERSION = -ctsi-2-uio-test1
 NAME = Hurr durr I'ma ninja sloth
 
 # *DOCUMENTATION*
