@@ -1,0 +1,1 @@
+obj-$(CONFIG_CARTESI_MACHINE_IO_DRIVER) += cmio.o
