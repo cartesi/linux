@@ -510,7 +510,7 @@ EXPORT_SYMBOL(sbi_remote_hfence_vvma_asid);
 
 static void sbi_srst_reset(unsigned long type, unsigned long reason)
 {
-	sbi_ecall(SBI_EXT_SRST, SBI_EXT_SRST_RESET, type, reason,
+	sbi_ecall(SBI_EXT_0_1_SHUTDOWN, 0, type, reason,
 		  0, 0, 0, 0);
 	pr_warn("%s: type=0x%lx reason=0x%lx failed\n",
 		__func__, type, reason);
@@ -519,10 +519,14 @@ static void sbi_srst_reset(unsigned long type, unsigned long reason)
 static int sbi_srst_reboot(struct notifier_block *this,
 			   unsigned long mode, void *cmd)
 {
-	sbi_srst_reset((mode == REBOOT_WARM || mode == REBOOT_SOFT) ?
-		       SBI_SRST_RESET_TYPE_WARM_REBOOT :
-		       SBI_SRST_RESET_TYPE_COLD_REBOOT,
-		       SBI_SRST_RESET_REASON_NONE);
+	int32_t reason = 255;
+	/* use the original value if we fail to parse */
+	if (kstrtoint(cmd, 10, &reason)) {
+		;
+	}
+
+	sbi_srst_reset(SBI_SRST_RESET_TYPE_SHUTDOWN,
+		       reason);
 	return NOTIFY_DONE;
 }
 
@@ -658,7 +662,7 @@ void __init sbi_init(void)
 	pr_info("SBI specification v%lu.%lu detected\n",
 		sbi_major_version(), sbi_minor_version());
 
-	if (!sbi_spec_is_0_1()) {
+	if (!sbi_spec_is_0_1() && !IS_ENABLED(CONFIG_RISCV_SBI_V01)) {
 		pr_info("SBI implementation ID=0x%lx Version=0x%lx\n",
 			sbi_get_firmware_id(), sbi_get_firmware_version());
 		if (sbi_probe_extension(SBI_EXT_TIME)) {
@@ -702,6 +706,10 @@ void __init sbi_init(void)
 		__sbi_set_timer = __sbi_set_timer_v01;
 		__sbi_send_ipi	= __sbi_send_ipi_v01;
 		__sbi_rfence	= __sbi_rfence_v01;
+
+		sbi_srst_reboot_nb.notifier_call = sbi_srst_reboot;
+		sbi_srst_reboot_nb.priority = 192;
+		register_restart_handler(&sbi_srst_reboot_nb);
 	}
 
 	if (!srst_power_off)

@@ -1,0 +1,30 @@
+menu "Cartesi Machine"
+
+config CARTESI_MACHINE
+    bool "Cartesi Machine"
+    depends on RISCV_SBI
+    default y if RISCV_SBI
+    help
+        Enable support for the Cartesi Machine RISC-V platform.
+        This enables the Cartesi Machine specific drivers and
+        configuration options.
+
+config CARTESI_MACHINE_IO_DRIVER
+    bool "Cartesi Machine IO Device"
+    depends on CARTESI_MACHINE
+    default y
+    help
+        Driver for the Cartesi Machine IO (cmio) device, which
+        provides guest-host communication via shared memory
+        buffers and SBI yield calls. Exposes /dev/cmio.
+
+config CARTESI_HALT_ON_PANIC
+    bool "Halt machine on kernel panic"
+    depends on CARTESI_MACHINE
+    default y
+    help
+        Halt the Cartesi Machine on kernel panic by issuing an
+        SBI shutdown call. This is useful for debugging to
+        prevent the machine from continuing in an undefined state.
+
+endmenu

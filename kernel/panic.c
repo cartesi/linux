@@ -590,6 +590,11 @@ void vpanic(const char *fmt, va_list args)
 			 "twice on console to return to the boot prom\n");
 	}
 #endif
+
+#ifdef CONFIG_CARTESI_HALT_ON_PANIC
+	machine_restart("255");
+#endif
+
 #if defined(CONFIG_S390)
 	disabled_wait();
 #endif
