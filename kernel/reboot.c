@@ -291,9 +291,9 @@ void kernel_restart(char *cmd)
 	migrate_to_reboot_cpu();
 	syscore_shutdown();
 	if (!cmd)
-		pr_emerg("Restarting system\n");
+		pr_notice("Restarting system\n");
 	else
-		pr_emerg("Restarting system with command '%s'\n", cmd);
+		pr_notice("Restarting system with command '%s'\n", cmd);
 	kmsg_dump(KMSG_DUMP_SHUTDOWN);
 	machine_restart(cmd);
 }
@@ -318,9 +318,9 @@ void kernel_halt(void)
 	migrate_to_reboot_cpu();
 	syscore_shutdown();
 	if (poweroff_fallback_to_halt)
-		pr_emerg("Power off not available: System halted instead\n");
+		pr_notice("Power off not available: System halted instead\n");
 	else
-		pr_emerg("System halted\n");
+		pr_notice("System halted\n");
 	kmsg_dump(KMSG_DUMP_SHUTDOWN);
 	machine_halt();
 }
@@ -708,7 +708,7 @@ void kernel_power_off(void)
 	do_kernel_power_off_prepare();
 	migrate_to_reboot_cpu();
 	syscore_shutdown();
-	pr_emerg("Power down\n");
+	pr_notice("Power down\n");
 	pr_flush(1000, true);
 	kmsg_dump(KMSG_DUMP_SHUTDOWN);
 	machine_power_off();
