@@ -6,7 +6,8 @@
 #   make -f cartesi.mk env      # print artifact names
 #   make -f cartesi.mk run-selftest
 #
-# Requires a riscv64-linux-gnu cross toolchain, wget, and xgenext2fs.
+# Requires a riscv64-linux-gnu cross toolchain and wget. Outside a git
+# checkout, set SOURCE_DATE_EPOCH to the commit date.
 
 TOOLCHAIN_PREFIX    ?= riscv64-linux-gnu
 
@@ -24,12 +25,19 @@ LINUX_TEST_DIR      := tools/testing/selftests
 JOBS                ?= -j$(shell nproc)
 
 KERNEL_VERSION      := $(shell $(MAKE) -s --no-print-directory -f Makefile kernelversion)
-KERNEL_TIMESTAMP    ?= $(shell date -Rud @$$(git log -1 --format=%ct 2> /dev/null || date +%s))
+SOURCE_DATE_EPOCH   ?= $(shell git log -1 --format=%ct)
+ifeq ($(strip $(SOURCE_DATE_EPOCH)),)
+$(error Cannot get the commit date from git. Set SOURCE_DATE_EPOCH)
+endif
+KERNEL_TIMESTAMP    := $(shell date -Rud @$(SOURCE_DATE_EPOCH))
+ifeq ($(strip $(KERNEL_TIMESTAMP)),)
+$(error Invalid SOURCE_DATE_EPOCH '$(SOURCE_DATE_EPOCH)')
+endif
 HEADERS             := artifacts/linux-headers-$(KERNEL_VERSION).tar.xz
 IMAGE               := artifacts/linux-$(KERNEL_VERSION)-no-opensbi.bin
 LINUX               := artifacts/linux-$(KERNEL_VERSION).bin
 LINUX_ELF           := artifacts/linux-$(KERNEL_VERSION).elf
-SELFTEST            := artifacts/linux-selftest-$(KERNEL_VERSION).ext2
+SELFTEST            := artifacts/linux-selftest-$(KERNEL_VERSION).tar.xz
 ARTIFACTS           := $(HEADERS) $(IMAGE) $(LINUX) $(LINUX_ELF) $(SELFTEST)
 
 CARTESI_MACHINE     ?= cartesi-machine
@@ -81,18 +89,17 @@ $(OPENSBI_DIR)/Makefile:
 # build linux tests
 # ------------------------------------------------------------------------------
 $(SELFTEST): vmlinux
-	mkdir -p artifacts $(WORK_DIR)
+	mkdir -p artifacts
 	$(MAKE) -r $(LINUX_OPTS) headers
 	$(MAKE) -rC $(LINUX_TEST_DIR) $(LINUX_OPTS) \
 		TARGETS=drivers/cartesi install
-	tar --sort=name --mtime="$(KERNEL_TIMESTAMP)" --owner=1000 --group=1000 --numeric-owner --mode=go=u-w -cf $(WORK_DIR)/selftest.tar --directory=$(LINUX_TEST_DIR)/kselftest_install .
-	xgenext2fs -f -i 4096 -b 1024 -a $(WORK_DIR)/selftest.tar $@
-	rm $(WORK_DIR)/selftest.tar
+	chmod -R go=u-w $(LINUX_TEST_DIR)/kselftest_install
+	tar --sort=name --mtime="$(KERNEL_TIMESTAMP)" --owner=1000 --group=1000 --numeric-owner -cJf $@ -C $(LINUX_TEST_DIR)/kselftest_install .
 
-run-selftest:
+run-selftest: $(LINUX) $(SELFTEST)
 	$(CARTESI_MACHINE) \
 		--ram-image=$(abspath $(LINUX)) \
-		--flash-drive=label:selftest,data_filename:$(abspath $(SELFTEST)) \
+		--volume=host_directory:$(abspath $(LINUX_TEST_DIR)/kselftest_install),guest_directory:/mnt/selftest \
 		-- $(SELFTEST_CMD)
 
 clean:
