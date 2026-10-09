@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   build:
-    name: Build linux.bin
+    name: Build Linux artifacts
     runs-on: ubuntu-latest
     container: debian:trixie-20250811
     env:
@@ -17,6 +17,8 @@ jobs:
         run: |
           apt-get update
           apt-get install --no-install-recommends -y \
+            autoconf \
+            automake \
             bc \
             bison \
             build-essential \
@@ -24,74 +26,60 @@ jobs:
             flex \
             gcc-riscv64-linux-gnu \
             git \
+            libarchive-dev \
+            libc6-dev-riscv64-cross \
             python3 \
-            rsync
+            rsync \
+            wget \
+            xz-utils
+
+      - name: Install xgenext2fs
+        run: |
+          wget -q https://github.com/cartesi/genext2fs/archive/refs/tags/v1.5.6.tar.gz
+          echo "34bfc26a037def23b85b676912462a3d126a87ef15c66c212b3500650da44f9e  v1.5.6.tar.gz" | sha256sum -c -
+          tar -xzf v1.5.6.tar.gz
+          cd genext2fs-1.5.6
+          ./autogen.sh
+          ./configure
+          make
+          make install
+          cd ..
+          rm -rf genext2fs-1.5.6 v1.5.6.tar.gz
 
       - name: Checkout Linux source code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Checkout OpenSBI source code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          repository: cartesi/opensbi
-          ref: 5612514832be90d2df920eb1fe89a18c57bacbf5 # v1.3.1-ctsi-2
-          path: .opensbi
-
-      - name: Build Linux
-        shell: bash
+      - name: Build artifacts
         run: |
-          SOURCE_DATE_EPOCH=$(git show -s --format=%ct HEAD)
-          KERNEL_TIMESTAMP=$(date --utc --date="@${SOURCE_DATE_EPOCH}" --rfc-email)
-          LINUX_OPTS=(
-            -j"$(nproc)"
-            ARCH=riscv
-            CROSS_COMPILE=riscv64-linux-gnu-
-            KBUILD_BUILD_TIMESTAMP="${KERNEL_TIMESTAMP}"
-            KBUILD_BUILD_USER=dapp
-            KBUILD_BUILD_HOST=cartesi
-          )
+          make -f cartesi.mk
+          cd artifacts
+          for f in *; do
+            sha512sum "$f" > "$f.sha512"
+          done
 
-          make "${LINUX_OPTS[@]}" cartesi_defconfig
-          make "${LINUX_OPTS[@]}" olddefconfig
-          make "${LINUX_OPTS[@]}" vmlinux Image
-
-      - name: Build linux.bin
-        run: |
-          make -C .opensbi -j"$(nproc)" \
-            FW_PAYLOAD_PATH="${GITHUB_WORKSPACE}/arch/riscv/boot/Image" \
-            FW_PAYLOAD=y \
-            FW_OPTIONS=0x01 \
-            PLATFORM=cartesi \
-            CROSS_COMPILE=riscv64-linux-gnu-
-          cp .opensbi/build/platform/cartesi/firmware/fw_payload.bin linux.bin
-          sha512sum linux.bin > linux.bin.sha512
-
-      - name: Upload linux.bin
+      - name: Upload artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
-          name: linux.bin
-          path: |
-            linux.bin
-            linux.bin.sha512
+          name: artifacts
+          path: artifacts/*
           compression-level: 0
 
   release:
-    name: Publish linux.bin
+    name: Publish artifacts
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download linux.bin
+      - name: Download artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: linux.bin
+          name: artifacts
 
       - name: Publish release artifacts
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           draft: true
           files: |
-            linux.bin
-            linux.bin.sha512
+            linux-*

@@ -104,6 +104,11 @@ modules.order
 /pacman/
 
 #
+# Cartesi artifacts (make -f cartesi.mk)
+#
+/artifacts/
+
+#
 # We don't want to ignore the following even if they are dot-files
 #
 !.clang-format
