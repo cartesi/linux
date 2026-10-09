@@ -17,8 +17,6 @@ jobs:
         run: |
           apt-get update
           apt-get install --no-install-recommends -y \
-            autoconf \
-            automake \
             bc \
             bison \
             build-essential \
@@ -26,31 +24,18 @@ jobs:
             flex \
             gcc-riscv64-linux-gnu \
             git \
-            libarchive-dev \
             libc6-dev-riscv64-cross \
             python3 \
             rsync \
             wget \
             xz-utils
 
-      - name: Install xgenext2fs
-        run: |
-          wget -q https://github.com/cartesi/genext2fs/archive/refs/tags/v1.5.6.tar.gz
-          echo "34bfc26a037def23b85b676912462a3d126a87ef15c66c212b3500650da44f9e  v1.5.6.tar.gz" | sha256sum -c -
-          tar -xzf v1.5.6.tar.gz
-          cd genext2fs-1.5.6
-          ./autogen.sh
-          ./configure
-          make
-          make install
-          cd ..
-          rm -rf genext2fs-1.5.6 v1.5.6.tar.gz
-
       - name: Checkout Linux source code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Build artifacts
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           make -f cartesi.mk
           cd artifacts
           for f in *; do
